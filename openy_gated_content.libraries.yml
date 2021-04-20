@@ -1,8 +1,23 @@
-styles:
+admin_ui_styles:
   version: 0.1
   css:
     theme:
-      css/styles.css: {}
+      assets/css/admin_ui_styles.css: {}
+
+openy-rose-menu:
+  version: 0.1
+  js:
+    assets/js/openy_rose.behaviors.js: { minified: false }
+
+gated-content-hash-fix:
+  version: 0.1
+  js:
+    assets/js/hash.behaviors.js: { minified: false }
+
+alerts:
+  version: 0.1
+  js:
+    assets/js/alerts.behaviors.js: { minified: false }
 
 gated-content-vue:
   version: 0.2
@@ -19,6 +34,8 @@ gated-content-vue:
     - openy_gated_content/vue-recaptcha
     - openy_gated_content/gated-content-styles
     - openy_system/openy_system.ajax_spinner
+    - openy_gated_content/gated-content-hash-fix
+    - openy_gated_content/alerts
 
 gated-content-styles:
   version: 0.2

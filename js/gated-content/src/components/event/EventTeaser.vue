@@ -1,46 +1,63 @@
 <template>
-  <div
-    class="video-teaser event-teaser"
-    v-bind:class="{
+  <div class="teaser event-teaser">
+    <router-link
+      :to="{ name: route, params: { id: video.id } }"
+      v-bind:class="{
       'live-stream': route === 'LiveStream',
       'virtual-meeting': route === 'VirtualMeeting'
     }"
-  >
-    <router-link :to="{ name: route, params: { id: video.id } }">
-      <div class="preview" v-bind:style="{
-              backgroundImage: `url(${image})`
-            }">
-        <div class="month">
-          <p>{{ video.attributes.date.value | month }}</p>
-          <p>{{ video.attributes.date.value | day }}</p>
-        </div>
-      </div>
+    >
       <div class="title">{{ video.attributes.title }}</div>
-      <div class="meta">
-        <div class="schedule">
-          <i class="fa fa-clock-o fa-clock" aria-hidden="true"></i>
-          {{ this.video.attributes.date | schedule }}
-        </div>
+      <div class="date">
+        <SvgIcon icon="date-icon"></SvgIcon>
+        {{ date }}
       </div>
-      <div v-if="isOnAir" class="controls join">
-        <router-link
-          :to="{ name: route, params: { id: video.id } }">
-          Join live stream
-        </router-link>
+      <div class="time">
+        <SvgIcon icon="clock-regular"></SvgIcon>
+        {{ time }} ({{ duration }})
       </div>
-      <div v-else class="controls subscribe">
-        <div>
-          <div class="video-level">{{ level | first_letter }}</div>{{ level | capitalize }}
-        </div>
+      <div
+        class="instructor"
+        v-if="this.video.attributes.host_name"
+      >
+        <SvgIcon icon="instructor-icon"></SvgIcon>
+        {{ this.video.attributes.host_name }}
+      </div>
+      <div
+        class="level"
+        v-if="level"
+      >
+        <SvgIcon icon="difficulty-icon-grey" :css-fill="false"></SvgIcon>
+        {{ level | capitalize }}
+      </div>
+      <div class="timer" :class="{live: isOnAir}">
+        <template v-if="isOnAir">
+          LIVE!
+        </template>
+        <template v-else>
+          Starts in {{ startsIn }}
+        </template>
       </div>
     </router-link>
+    <AddToFavorite
+      :id="video.attributes.drupal_internal__id"
+      :type="'eventinstance'"
+      :bundle="type"
+    ></AddToFavorite>
   </div>
 </template>
 
 <script>
+import AddToFavorite from '@/components/AddToFavorite.vue';
+import SvgIcon from '@/components/SvgIcon.vue';
+import dayjs from 'dayjs';
 
 export default {
   name: 'EventTeaser',
+  components: {
+    SvgIcon,
+    AddToFavorite,
+  },
   props: {
     video: {
       type: Object,
@@ -48,6 +65,30 @@ export default {
     },
   },
   computed: {
+    date() {
+      return dayjs(this.video.attributes.date.value).format('YYYY-MM-DD');
+    },
+    time() {
+      return dayjs(this.video.attributes.date.value).format('h:mm a');
+    },
+    duration() {
+      const min = Math.floor(dayjs.duration(
+        dayjs(this.video.attributes.date.end_value) - dayjs(this.video.attributes.date.value),
+      ).asMinutes());
+
+      return `${min} ${this.$options.filters.simplePluralize('minute', min)}`;
+    },
+    startsIn() {
+      const eventStartDate = dayjs(this.video.attributes.date.value);
+      const startsDuration = dayjs.duration(eventStartDate - dayjs());
+
+      if (startsDuration.asHours() >= 48) {
+        return `${Math.floor(startsDuration.asDays())} days`;
+      }
+
+      const { prependZero } = this.$options.filters;
+      return `${prependZero(Math.floor(startsDuration.asHours()))}:${prependZero(startsDuration.minutes())}:${prependZero(startsDuration.seconds())}`;
+    },
     image() {
       if (this.video.attributes['field_ls_image.field_media_image']) {
         return this.video.attributes['field_ls_image.field_media_image']
@@ -79,6 +120,9 @@ export default {
         default:
           return 'LiveStream';
       }
+    },
+    type() {
+      return this.video.type.replace('eventinstance--', '');
     },
   },
 };
