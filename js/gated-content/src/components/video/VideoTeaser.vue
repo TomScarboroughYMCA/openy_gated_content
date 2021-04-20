@@ -1,32 +1,51 @@
 <template>
-  <div class="video-teaser">
-    <router-link :to="{ name: 'Video', params: { id: video.id } }">
-        <div class="preview" v-bind:style="{
+  <div class="teaser video-teaser">
+    <router-link
+      :to="{ name: 'Video', params: { id: video.id } }">
+      <div class="preview" v-bind:style="{
               backgroundImage: `url(${image})`
             }">
-          <YoutubePlayButton></YoutubePlayButton>
-          <div v-if="duration" class="duration">{{duration}}</div>
-        </div>
-        <div class="title">{{ video.attributes.title }}</div>
-        <div
-          v-if="video.attributes.field_gc_video_level"
-          class="meta">
-          <div class="video-level">
-            {{ video.attributes.field_gc_video_level.name | first_letter }}
-          </div>
-          {{ video.attributes.field_gc_video_level.name | capitalize }}
-        </div>
+        <div class="play-button"></div>
+      </div>
+      <div class="title">{{ video.attributes.title }}</div>
+      <div
+        class="instructor"
+        v-if="this.video.attributes.field_gc_video_instructor"
+      >
+        <SvgIcon icon="instructor-icon"></SvgIcon>
+        {{ this.video.attributes.field_gc_video_instructor }}
+      </div>
+      <div
+        class="level"
+        v-if="video.attributes.field_gc_video_level"
+      >
+        <SvgIcon icon="difficulty-icon-white" :css-fill="false"></SvgIcon>
+        {{ video.attributes.field_gc_video_level.name | capitalize }}
+      </div>
+      <div class="timer" :style="{ visibility: this.video
+        .attributes.field_gc_video_duration ? 'visible': 'hidden'}">
+        {{ duration }}
+      </div>
     </router-link>
+    <AddToFavorite
+      :id="video.attributes.drupal_internal__nid"
+      :type="'node'"
+      :bundle="'gc_video'"
+      class="white"
+    ></AddToFavorite>
   </div>
 </template>
 
 <script>
-import YoutubePlayButton from '@/components/YoutubePlayButton.vue';
+import AddToFavorite from '@/components/AddToFavorite.vue';
+import SvgIcon from '@/components/SvgIcon.vue';
+import dayjs from 'dayjs';
 
 export default {
   name: 'VideoTeaser',
   components: {
-    YoutubePlayButton,
+    SvgIcon,
+    AddToFavorite,
   },
   props: {
     video: {
@@ -49,15 +68,12 @@ export default {
     },
     duration() {
       const sec = this.video.attributes.field_gc_video_duration;
-      if (sec === null) {
-        return '';
+      if (sec > 0 && sec < 60) {
+        return `${sec} ${this.$options.filters.simplePluralize('second', sec)}`;
       }
 
-      function appendZero(n) {
-        return (n < 10) ? `0${n}` : n;
-      }
-
-      return `${appendZero(Math.floor(sec / 60))}:${appendZero(sec % 60)}`;
+      const min = Math.floor(dayjs.duration(sec, 'seconds').asMinutes());
+      return `${min} ${this.$options.filters.simplePluralize('minute', min)}`;
     },
   },
 };

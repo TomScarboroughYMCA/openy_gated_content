@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+
 export const EventMixin = {
   watch: {
     $route: 'load',
@@ -30,6 +32,36 @@ export const EventMixin = {
     },
     config() {
       return this.$store.getters.getAppSettings;
+    },
+    date() {
+      return dayjs(this.video.attributes.date.value).format('dddd, MMMM Do, YYYY');
+    },
+    time() {
+      return dayjs(this.video.attributes.date.value).format('h:mm a');
+    },
+    duration() {
+      const min = Math.floor(dayjs.duration(
+        dayjs(this.video.attributes.date.end_value) - dayjs(this.video.attributes.date.value),
+      ).asMinutes());
+
+      return `${min} ${this.$options.filters.simplePluralize('minute', min)}`;
+    },
+    startsIn() {
+      const eventStartDate = dayjs(this.video.attributes.date.value);
+      const startsDuration = dayjs.duration(eventStartDate - dayjs());
+
+      if (startsDuration.asHours() >= 48) {
+        return `${Math.floor(startsDuration.asDays())} days`;
+      }
+
+      const { prependZero } = this.$options.filters;
+      return `${prependZero(Math.floor(startsDuration.asHours()))}:${prependZero(startsDuration.minutes())}:${prependZero(startsDuration.seconds())}`;
+    },
+    isOnAir() {
+      const dateStart = new Date(this.video.attributes.date.value);
+      const dateEnd = new Date(this.video.attributes.date.end_value);
+      const now = new Date();
+      return dateStart < now && now < dateEnd;
     },
   },
   methods: {
